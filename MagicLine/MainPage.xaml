@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MagicLine.MainPage">
+
+    <StackLayout>
+        <StackLayout>
+            <HorizontalStackLayout Margin="20">
+                <Label FontSize="20" Text="Score : "></Label>
+                <Label FontSize="20" Text="{Binding Score}"></Label>
+            </HorizontalStackLayout>
+        </StackLayout>
+        <Grid VerticalOptions="Start" Grid.Row="1" x:Name="mainboard"></Grid>
+        <Grid Margin="15,5" HeightRequest="50" ColumnDefinitions="*,*,*">
+            <StackLayout>
+                <FlexLayout Background="gray" AlignItems="Center">
+                    <Label Text="Next" Margin="10,0,6,0"></Label>
+                    <Ellipse WidthRequest="15" HeightRequest="15" x:Name="ball1" Fill="red"  
+              HorizontalOptions="StartAndExpand" VerticalOptions="StartAndExpand" >
+                    </Ellipse>
+                    <Ellipse WidthRequest="15" HeightRequest="15" x:Name="ball2" Fill="blue"  
+HorizontalOptions="StartAndExpand" VerticalOptions="StartAndExpand" >
+                    </Ellipse>
+                    <Ellipse WidthRequest="15" HeightRequest="15" x:Name="ball3" Fill="yellow"  
+HorizontalOptions="StartAndExpand" VerticalOptions="StartAndExpand" >
+                    </Ellipse>
+                </FlexLayout>
+            </StackLayout>
+        </Grid>
+    </StackLayout>
+</ContentPage>
