@@ -1,0 +1,17 @@
+<!--<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+              xmlns:converter ="clr-namespace:MagicLine"
+             x:Class="MagicLine.BallView">
+    <ContentView.Resources>
+        <converter:ConventerBall x:Key="ballVisibility" ></converter:ConventerBall>
+        <converter:ConventerBallSize x:Key="ballSize" ></converter:ConventerBallSize>
+        <converter:ConventerBallColor x:Key="ballColor" ></converter:ConventerBallColor>
+    </ContentView.Resources>
+    <Grid Margin="0">
+        <Ellipse x:Name="ball" Margin="0"
+       Fill="{Binding Color, Converter={StaticResource ballColor}}"     
+       HorizontalOptions="StartAndExpand" VerticalOptions="StartAndExpand" >
+        </Ellipse>
+    </Grid>
+</ContentView>-->

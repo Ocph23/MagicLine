@@ -1,31 +1,51 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:converter="clr-namespace:MagicLine" Shell.NavBarIsVisible="False"
+             Padding="10"
              x:Class="MagicLine.MainPage">
+    <ContentPage.Resources>
+        <converter:ConventerBallColor x:Key="ballColor"></converter:ConventerBallColor>
+    </ContentPage.Resources>
 
     <StackLayout>
-        <StackLayout>
+        <Grid>
             <HorizontalStackLayout Margin="20">
-                <Label FontSize="20" Text="Score : "></Label>
-                <Label FontSize="20" Text="{Binding Score}"></Label>
+                <Label FontSize="20" Text="Score :"></Label>
+                <Label FontSize="20" Margin="10,0" Text="{Binding GameBoard.Score}"></Label>
             </HorizontalStackLayout>
-        </StackLayout>
-        <Grid VerticalOptions="Start" Grid.Row="1" x:Name="mainboard"></Grid>
-        <Grid Margin="15,5" HeightRequest="50" ColumnDefinitions="*,*,*">
-            <StackLayout>
-                <FlexLayout Background="gray" AlignItems="Center">
-                    <Label Text="Next" Margin="10,0,6,0"></Label>
-                    <Ellipse WidthRequest="15" HeightRequest="15" x:Name="ball1" Fill="red"  
-              HorizontalOptions="StartAndExpand" VerticalOptions="StartAndExpand" >
-                    </Ellipse>
-                    <Ellipse WidthRequest="15" HeightRequest="15" x:Name="ball2" Fill="blue"  
-HorizontalOptions="StartAndExpand" VerticalOptions="StartAndExpand" >
-                    </Ellipse>
-                    <Ellipse WidthRequest="15" HeightRequest="15" x:Name="ball3" Fill="yellow"  
-HorizontalOptions="StartAndExpand" VerticalOptions="StartAndExpand" >
-                    </Ellipse>
-                </FlexLayout>
-            </StackLayout>
+            <HorizontalStackLayout Margin="20" HorizontalOptions="End">
+                <Label FontSize="20" Text="Best Score :"></Label>
+                <Label FontSize="20" Margin="10,0" Text="{Binding BestScore}"></Label>
+            </HorizontalStackLayout>
+        </Grid>
+        <Grid>
+            <Grid VerticalOptions="Start" Grid.Row="1" x:Name="mainboard">
+            </Grid>
+            <AbsoluteLayout VerticalOptions="Start" Grid.Row="1">
+                <Border Margin="0,8" Padding="0" BackgroundColor="WhiteSmoke" AbsoluteLayout.LayoutBounds="15,450,200,70" >
+                    <StackLayout >
+                        <Label Text="Next" Margin="5,0" ></Label>
+                        <HorizontalStackLayout  x:Name="nextcolors" HorizontalOptions="Center">
+                        </HorizontalStackLayout>
+                    </StackLayout>
+                </Border>
+                <Border Margin="0,8" Padding="0" BackgroundColor="WhiteSmoke" AbsoluteLayout.LayoutBounds="216,450,50,70" >
+                </Border>
+                <Frame Padding="2" AbsoluteLayout.LayoutBounds="250,450,30,30" CornerRadius="50" 
+                       BackgroundColor="OrangeRed"
+                       BorderColor="Transparent">
+                    <Label HorizontalTextAlignment="Center" Text="{Binding GameBoard.Hammer}" TextColor="White" 
+                           VerticalOptions="Center" HorizontalOptions="Center"></Label>
+                </Frame>
+                <Image x:Name="hammer" AbsoluteLayout.LayoutBounds="210,450,50,70" 
+                       Source="hammer1.png" WidthRequest="30" HeightRequest="30">
+                    <Image.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="TapGestureRecognizer_Tapped"></TapGestureRecognizer>
+                    </Image.GestureRecognizers>
+                </Image>
+                <Button Margin="0,8" Clicked="Button_Clicked" Text="Save" AbsoluteLayout.LayoutBounds="280,450,100,70" Padding="3"></Button>
+            </AbsoluteLayout>
         </Grid>
     </StackLayout>
 </ContentPage>

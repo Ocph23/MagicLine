@@ -6,53 +6,129 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 
+
 namespace MagicLineLib
 {
-    public class Board
+    public class Board : BaseNotify
     {
         //Color[] colors = new Color[] { Color.Red, Color.Blue, Color.Yellow, Color.Pink, Color.White, Color.Green };
-        string[] colorHex = new string[] { "#FFFFFF", "#235789", "#05B2DC", "#5B7553", "#FDE74C", "#E84855", "#9C0D38", "#FA9F42", "#B735FD", };
-        Color[] colors;
-        Random random = new Random();
-        public int GridSize { get; set; }
-        public Cell[,] Grid { get; set; }
+        string[] colors = ColorHelper.GetColorNames();
 
-        public int Score { get; set; }
+        //Color[] colors;
+        Random random = new Random();
 
         int CountOfNewGeneration = 3;
+
+        public double WidthColumn { get; private set; }
+
         int CountOfComplete = 5;
 
-        public EventHandler<int> OnChangeScore;
+        public int GridSize { get; set; }
 
+        public CellBall[,] Grid { get; set; }
 
-        public Board(int gridSize, int countOfCOlor = 9, int countOfComplete = 5, int countOfNewGeneration = 3)
+        private int score;
+
+        public int Score
         {
+            get { return score; }
+            set { SetProperty(ref score, value); }
+        }
+
+
+        private int hammer;
+
+        public int Hammer
+        {
+            get { return hammer; }
+            set { SetProperty(ref hammer, value); }
+        }
+
+
+         public EventHandler<bool> OnGameOver;
+        public EventHandler<string[]> OnGenerateNewColors;
+        public EventHandler<bool> OnBallStep;
+
+        public Board(int gridSize, double widthScreen, int countOfCOlor = 9, int countOfComplete = 5, int countOfNewGeneration = 3)
+        {
+            this.WidthColumn = widthScreen / gridSize;
             this.CountOfComplete = countOfComplete;
             this.CountOfNewGeneration = countOfNewGeneration;
-            colors = colorHex.Select(x => ColorTranslator.FromHtml(x)).Take(countOfCOlor).ToArray();
+            // colors = colorHex.Select(x => ColorTranslator.FromHtml(x)).Take(countOfCOlor).ToArray();
             GridSize = gridSize;
-            Grid = new Cell[GridSize, GridSize];
+            Grid = new CellBall[GridSize, GridSize];
 
             for (int i = 0; i < GridSize; i++)
             {
                 for (int j = 0; j < GridSize; j++)
                 {
-                    Grid[i, j] = new Cell(i, j);
+                    Grid[i, j] = new CellBall(i, j, WidthColumn);
                 }
             }
             NextGeneration();
+            NextGeneration();
         }
 
-        public void CreateNewCell()
+
+        public Board(int gridSize, double widthScreen, List<string> source, int countOfCOlor = 9, int countOfComplete = 5, int countOfNewGeneration = 3)
+        {
+            this.WidthColumn = widthScreen / gridSize;
+            this.CountOfComplete = countOfComplete;
+            this.CountOfNewGeneration = countOfNewGeneration;
+            // colors = colorHex.Select(x => ColorTranslator.FromHtml(x)).Take(countOfCOlor).ToArray();
+            GridSize = gridSize;
+            Grid = new CellBall[GridSize, GridSize];
+
+            for (int i = 0; i < GridSize; i++)
+            {
+                for (int j = 0; j < GridSize; j++)
+                {
+                    Grid[i, j] = new CellBall(i, j, WidthColumn);
+                }
+            }
+
+
+            foreach (var item in source)
+            {
+                var datas = item.Split(";");
+                var row = Convert.ToInt32(datas[0]);
+                var col = Convert.ToInt32(datas[1]);
+                CellSize size = (CellSize)Enum.Parse(typeof(CellSize), datas[2].ToString());
+                Grid[row, col].Color = datas[3].ToString();
+                Grid[row, col].Size = size;
+            }
+        }
+
+        public void CreateNewCellBall()
         {
 
-            var emptys = Grid.Cast<Cell>().Where(x => x.Size == CellSize.Empty);
-            var c = random.Next(emptys.Count());
-            var r = random.Next(colors.Length);
-            Color color = colors[r];
-            var cell = emptys.ToArray()[c];
-            cell.Size = CellSize.Small;
-            cell.Color = color;
+            foreach (var color in NextColors)
+            {
+                var emptys = Grid.Cast<CellBall>().Where(x => x.Size == CellSize.Empty);
+                if (emptys.Any())
+                {
+                    var c = random.Next(emptys.Count());
+                    var cell = emptys.ToArray()[c];
+                    cell.Size = CellSize.Small;
+                    cell.Color = color;
+                }
+
+            }
+            CreateNextColor();
+        }
+
+        public List<string> NextColors { get; set; } = new List<string>();
+
+        private void CreateNextColor()
+        {
+            NextColors.Clear();
+            for (int i = 0; i < CountOfNewGeneration; i++)
+            {
+                var r = random.Next(colors.Length);
+                NextColors.Add(colors[r]);
+            }
+
+            OnGenerateNewColors?.Invoke(this, NextColors.ToArray());
         }
 
         public void NextGeneration()
@@ -69,21 +145,16 @@ namespace MagicLineLib
                     }
                 }
             }
-
-            for (int i = 0; i < CountOfNewGeneration; i++)
-            {
-                CreateNewCell();
-            }
-            OnCellsComplete();
-
+            CreateNewCellBall();
+            OnCellBallsComplete();
         }
 
-        public bool OnCellsComplete()
+        public bool OnCellBallsComplete()
         {
             try
             {
-                List<Cell> allList = new List<Cell>();
-                var newGrid = Grid.Clone() as Cell[,];
+                List<CellBall> allList = new List<CellBall>();
+                var newGrid = Grid.Clone() as CellBall[,];
                 bool hasCompleteBall = false;
 
                 //horizontal
@@ -96,7 +167,7 @@ namespace MagicLineLib
                             var first = newGrid[i, j];
                             if (first.Size == CellSize.Big)
                             {
-                                List<Cell> list = new List<Cell>();
+                                List<CellBall> list = new List<CellBall>();
                                 list.Add(first);
                                 for (int z = j + 1; z < GridSize; z++)
                                 {
@@ -149,7 +220,7 @@ namespace MagicLineLib
                             var first = newGrid[i, j];
                             if (first.Size == CellSize.Big)
                             {
-                                List<Cell> list = new List<Cell>();
+                                List<CellBall> list = new List<CellBall>();
                                 list.Add(first);
                                 for (int z = i + 1; z < GridSize; z++)
                                 {
@@ -204,7 +275,7 @@ namespace MagicLineLib
                                 var first = newGrid[y, col];
                                 if (first.Size == CellSize.Big)
                                 {
-                                    List<Cell> list = new List<Cell>();
+                                    List<CellBall> list = new List<CellBall>();
                                     list.Add(first);
                                     for (int z = y + 1; z < GridSize; z++)
                                     {
@@ -267,7 +338,7 @@ namespace MagicLineLib
                                 var first = newGrid[y, col];
                                 if (first.Size == CellSize.Big)
                                 {
-                                    List<Cell> list = new List<Cell>();
+                                    List<CellBall> list = new List<CellBall>();
                                     list.Add(first);
                                     for (int z = y + 1; z < GridSize; z++)
                                     {
@@ -324,8 +395,7 @@ namespace MagicLineLib
                         score = (x + 1) * item.Count();
                     }
 
-                    Score += score;
-                    OnChangeScore?.Invoke(this, Score);
+                    SetScore(score);
                 }
 
                 foreach (var item in allList)
@@ -344,12 +414,24 @@ namespace MagicLineLib
             }
         }
 
-
-        private List<Cell> DiagonalToleft(int i, int j)
+        private async Task SetScore(int score)
         {
-            List<Cell> list = new List<Cell>();
+            if (score >= 45)
+                Hammer++;
+            for (int i = 0; i < score; i++)
+            {
+                Score++;
+                await Task.Delay(100);
+            }
 
-            var newGrid = Grid.Clone() as Cell[,];
+
+        }
+
+        private List<CellBall> DiagonalToleft(int i, int j)
+        {
+            List<CellBall> list = new List<CellBall>();
+
+            var newGrid = Grid.Clone() as CellBall[,];
             for (int col = j; col >= 0; col--)
             {
                 var row = i;
@@ -386,13 +468,18 @@ namespace MagicLineLib
             return list;
         }
 
-        public async Task Move(Cell start, List<Cell> path)
+        public async Task Move(CellBall start, List<CellBall> path)
         {
 
-            var datastart = Grid.Cast<Cell>().Where(x => x == start).FirstOrDefault();
-
+            var datastart = Grid.Cast<CellBall>().Where(x => x == start).FirstOrDefault();
             datastart.Size = CellSize.Empty;
-            await Task.Delay(100);
+
+
+            var destination = path.Last();
+            (string color, CellSize size) last = (destination.Color, destination.Size);
+
+
+            OnBallStep?.Invoke(this, false);
 
             foreach (var item in path.Select((value, index) => new { value, index }))
             {
@@ -401,63 +488,93 @@ namespace MagicLineLib
                 item.value.Color = datastart.Color;
                 item.value.Size = CellSize.Big;
                 await Task.Delay(100);
+
                 if (item.index < path.Count - 1)
                 {
+                    OnBallStep?.Invoke(this, false);
                     item.value.Color = color;
                     item.value.Size = size;
                 }
 
             }
-            var hasComleteBall = OnCellsComplete();
+
+            if (last.size == CellSize.Small)
+            {
+                var emptys = Grid.Cast<CellBall>().Where(x => x.Size == CellSize.Empty);
+                if (emptys.Any())
+                {
+                    var c = random.Next(emptys.Count());
+                    var cell = emptys.ToArray()[c];
+                    cell.Size = CellSize.Big;
+                    cell.Color = last.color;
+                }
+            }
+
+
+            var hasComleteBall = OnCellBallsComplete();
             if (!hasComleteBall)
-                NextGeneration();
+            {
+                var emptys = Grid.Cast<CellBall>().Where(x => x.Size == CellSize.Empty);
+                if (!emptys.Any())
+                {
+                    OnGameOver?.Invoke(this, true);
+                }
+                else
+                {
+                    NextGeneration();
+                }
+            }
+            else
+            {
+                OnBallStep?.Invoke(this, true);
+            }
         }
 
-        public List<Cell> FindPath(Cell start, Cell dest)
+        public List<CellBall> FindPath(CellBall start, CellBall dest)
         {
-            var grid = Grid.Clone() as Cell[,];
-            List<Cell> Open = new List<Cell>();
-            List<Cell> Closed = new List<Cell>();
+            var grid = Grid.Clone() as CellBall[,];
+            List<CellBall> Open = new List<CellBall>();
+            List<CellBall> Closed = new List<CellBall>();
 
-            // foreach (var item in grid.Cast<Cell>().ToArray())
+            // foreach (var item in grid.Cast<CellBall>().ToArray())
             // {
             //     item.SetNeighbors(grid, GridSize);
             // }
             Open.Add(start);
             while (Open.Count > 0)
             {
-                var currentCell = Open[0];
+                var currentCellBall = Open[0];
                 for (int i = 1; i < Open.Count; i++)
                 {
-                    if (Open[i].FCost < currentCell.FCost || Open[i].FCost == currentCell.FCost && Open[i].HCost < currentCell.HCost)
+                    if (Open[i].FCost < currentCellBall.FCost || Open[i].FCost == currentCellBall.FCost && Open[i].HCost < currentCellBall.HCost)
                     {
-                        currentCell = Open[i];
+                        currentCellBall = Open[i];
                     }
                 }
 
-                Open.Remove(currentCell);
-                Closed.Add(currentCell);
+                Open.Remove(currentCellBall);
+                Closed.Add(currentCellBall);
 
-                if (currentCell == dest)
+                if (currentCellBall == dest)
                 {
                     var path = RetracePath(start, dest);
                     return path;
                 }
 
 
-                foreach (var neighbor in currentCell.GetNeighbors(grid, GridSize))
+                foreach (var neighbor in currentCellBall.GetNeighbors(grid, GridSize))
                 {
                     if (neighbor.UnWalkable || Closed.Contains(neighbor))
                     {
                         continue;
                     }
 
-                    int newMovementCostToNeighbor = currentCell.GCost + GetDistance(currentCell, neighbor);
+                    int newMovementCostToNeighbor = currentCellBall.GCost + GetDistance(currentCellBall, neighbor);
                     if (newMovementCostToNeighbor < neighbor.GCost || !Open.Contains(neighbor))
                     {
                         neighbor.GCost = newMovementCostToNeighbor;
                         neighbor.HCost = GetDistance(neighbor, dest);
-                        neighbor.Parent = currentCell;
+                        neighbor.Parent = currentCellBall;
                         if (!Open.Contains(neighbor))
                             Open.Add(neighbor);
                     }
@@ -466,10 +583,10 @@ namespace MagicLineLib
             return null;
         }
 
-        List<Cell> RetracePath(Cell start, Cell dest)
+        List<CellBall> RetracePath(CellBall start, CellBall dest)
         {
-            List<Cell> pathx = new List<Cell>();
-            Cell currentNode = dest;
+            List<CellBall> pathx = new List<CellBall>();
+            CellBall currentNode = dest;
             while (currentNode != start)
             {
                 pathx.Add(currentNode);
@@ -479,7 +596,7 @@ namespace MagicLineLib
             return pathx;
         }
 
-        int GetDistance(Cell a, Cell b)
+        int GetDistance(CellBall a, CellBall b)
         {
             int distx = Math.Abs(a.RowNumber - b.RowNumber);
             int disty = Math.Abs(a.ColumnNumber - b.ColumnNumber);

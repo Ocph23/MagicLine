@@ -1,0 +1,19 @@
+<!--<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:drawable ="clr-namespace:MagicLine"
+             x:Class="MagicLine.CanvasPage"
+             Title="CanvasPage">
+ 
+    <Grid RowDefinitions="*,auto">
+        <AbsoluteLayout x:Name="main" VerticalOptions="Start" BackgroundColor="WhiteSmoke">
+        </AbsoluteLayout>
+        <VerticalStackLayout Grid.Row="1">
+            <Border HeightRequest="30" WidthRequest="30" BackgroundColor="Yellow">
+                <drawable:BallView Color="Green"></drawable:BallView>
+            </Border>
+            <Button Text="Move" Clicked="Button_Clicked"></Button>
+            <Button Text="Create Ball" Clicked="Button_Clicked_1"></Button>
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>-->

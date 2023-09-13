@@ -1,15 +1,17 @@
 
+using MagicLineLib;
+
 namespace MagicLine;
 
 
-public delegate Task ClickCell(MagicLineLib.Cell cell);
+public delegate Task ClickCell(CellBall cell);
 
-public partial class CellView : ContentView ,IDisposable
+public partial class CellView : ContentView, IDisposable
 {
 
-    private MagicLineLib.Cell cell;
+    private CellBall cell;
 
-    public MagicLineLib.Cell Cell
+    public CellBall Cell
     {
         get { return cell; }
         set
@@ -24,29 +26,22 @@ public partial class CellView : ContentView ,IDisposable
     public event ClickCell OnClickCell;
 
     CancellationTokenSource cancelTokenSource = new CancellationTokenSource();
-    public CellView(MagicLineLib.Cell cell)
+    private object animation;
+
+    public CellView(CellBall cell)
     {
         InitializeComponent();
         this.Cell = cell;
         BindingContext = this;
-       
+
     }
 
-    private async Task StartAnimation(CancellationToken token)
-    {
-        while (IsSelected)
-        {
-            if(token.IsCancellationRequested)
-                IsSelected = false;
-            await this.ball.ScaleTo(0.5, 250);
-            await this.ball.ScaleTo(1, 250);
-        }
-    }
+
 
     private void TapGestureRecognizer_Tapped(object sender, TappedEventArgs e)
     {
         var cellView = ((StackLayout)sender).Parent as CellView;
-        var cell = (MagicLineLib.Cell)cellView.Cell;
+        var cell = (CellBall)cellView.Cell;
         if (OnClickCell != null)
         {
             OnClickCell?.Invoke(cell);
@@ -56,14 +51,17 @@ public partial class CellView : ContentView ,IDisposable
 
     internal async Task Selected()
     {
-        IsSelected=!IsSelected;
-        if(IsSelected)
-          await  StartAnimation(cancelTokenSource.Token);
+        IsSelected = !IsSelected;
+        if (IsSelected)
+        {
+            new Animation {  { 0, 0.2, new Animation (v => this.ball.Scale = v, 1, 0.8) },
+                { 0.2, 0.4, new Animation (v => this.ball.Scale = v, 0.8, 1) }}
+            .Commit(this, $"SelectAnimation{this.Cell.Position.Row}{this.Cell.Position.Column}", 16, 500, null, null, () => true);
+        }
         else
         {
-            cancelTokenSource.Cancel();
+            this.AbortAnimation($"SelectAnimation{this.Cell.Position.Row}{this.Cell.Position.Column}");
         }
-
     }
 
     public void Dispose()

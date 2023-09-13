@@ -3,7 +3,7 @@ using System.Drawing;
 
 namespace MagicLineLib
 {
-    public class Cell    :BaseNotify
+    public class CellBall:BaseNotify
     {
 
         public int GCost { get; set; }
@@ -27,6 +27,7 @@ namespace MagicLineLib
             set { SetProperty(ref columnNumber , value); }
         }
 
+        public Position Position { get; private set; }
 
         private CellSize size;
 
@@ -37,26 +38,27 @@ namespace MagicLineLib
         }
 
 
-        private Color color;
+        private string color;
 
-        public Color Color
+        public string Color
         {
             get { return color; }
             set {SetProperty(ref color , value); }
         }
 
-        public Cell(int row, int column)
+        public CellBall(int row, int column, double width)
         {
             RowNumber = row;
             ColumnNumber = column;
+            Position = new Position(row*width, column*width);
         }
         public bool UnWalkable => Size == CellSize.Big ? true : false;
 
-        public Cell Parent { get; set; }
+        public CellBall Parent { get; set; }
 
-        public List<Cell> GetNeighbors(Cell[,] grid, int gridSize)
+        public List<CellBall> GetNeighbors(CellBall[,] grid, int gridSize)
         {
-            List<Cell> neighbors = new List<Cell>();
+            List<CellBall> neighbors = new List<CellBall>();
             try
             {
                 if (ColumnNumber + 1 < gridSize)

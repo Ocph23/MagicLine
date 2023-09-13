@@ -9,7 +9,7 @@ namespace MagicLine
     public partial class App : Application
     {
         const int WindowWidth = 500;
-        const int WindowHeight = 650;
+        const int WindowHeight = 700;
         public App()
         {
             InitializeComponent();

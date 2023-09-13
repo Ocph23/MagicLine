@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MagicLineLib;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
@@ -53,13 +54,9 @@ namespace MagicLine
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            var sysColor = (System.Drawing.Color)value;
-            var hex = System.Drawing.ColorTranslator.ToHtml(sysColor);
-            return new RadialGradientBrush(new GradientStopCollection() {
-                new GradientStop(Microsoft.Maui.Graphics.Colors.WhiteSmoke,.5f)     ,
-                new GradientStop(Microsoft.Maui.Graphics.Color.FromArgb(hex),1.0f)
-            })
-            {Center = new Microsoft.Maui.Graphics.Point(1.1,1.0) };
+            if (value==null)
+                return null;
+            return Helper.ColorToGradientBall(value.ToString());
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
