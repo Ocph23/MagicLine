@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:converter="clr-namespace:MagicLine" Shell.NavBarIsVisible="False"
              Padding="10"
+             BackgroundImageSource="bg.jpg"
              x:Class="MagicLine.MainPage">
     <ContentPage.Resources>
         <converter:ConventerBallColor x:Key="ballColor"></converter:ConventerBallColor>
@@ -45,6 +46,7 @@
                     </Image.GestureRecognizers>
                 </Image>
                 <Button Margin="0,8" Clicked="Button_Clicked" Text="Save" AbsoluteLayout.LayoutBounds="280,450,100,70" Padding="3"></Button>
+                <!--<converter:Ball  OnSelectedBall="MyBall_OnSelectedBall" AbsoluteLayout.LayoutBounds="280,450,50,50" Padding="0"></converter:Ball>-->
             </AbsoluteLayout>
         </Grid>
     </StackLayout>

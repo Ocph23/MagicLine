@@ -1,5 +1,5 @@
 ﻿
-using MagicLineLib;
+using MagicLine.Game;
 using Microsoft.Maui.Controls.Shapes;
 using Plugin.Maui.Audio;
 using System.Collections.ObjectModel;
@@ -30,12 +30,11 @@ namespace MagicLine
         public Board GameBoard { get; set; }
         int count = 0;
 
-        public CellBall StartMove { get; private set; }
-        public CellBall DestinationMove { get; private set; }
+        public IBall StartMove { get; set; }
+        public IBall DestinationMove { get; set; }
 
         public ObservableCollection<string> NextColors { get; set; } = new ObservableCollection<string>();
 
-        IAudioPlayer audioManager;
         private bool giveused;
 
         [Obsolete]
@@ -43,32 +42,29 @@ namespace MagicLine
         {
             InitializeComponent();
 
-            // Preferences.Set("lastBoard", null);
+            Preferences.Set("lastBoard", null);
             var data = Preferences.Get("lastBoard", null);
             BestScore = Preferences.Get("bestScore", 0);
             var screen = DeviceDisplay.Current.MainDisplayInfo;
-            mainboard.WidthRequest = screen.Width / screen.Density;
-            mainboard.HeightRequest = screen.Width / screen.Density;
+            var width = (screen.Width / screen.Density) - 10;
+            mainboard.WidthRequest = width;
+            mainboard.HeightRequest = width;
 #if WINDOWS
                                    mainboard.WidthRequest=450;
                                    mainboard.HeightRequest=450;
 #endif
-
-
-
-
-
             if (string.IsNullOrEmpty(data))
             {
                 GameBoard = new Board(9, mainboard.WidthRequest);
             }
             else
             {
-                var dataModel = JsonSerializer.Deserialize<List<string>>(data, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                var dataModel = JsonSerializer.Deserialize<List<string>>(data, new JsonSerializerOptions
+                { PropertyNameCaseInsensitive = true });
                 GameBoard = new Board(9, mainboard.WidthRequest, dataModel);
             }
 
-            GameBoard.Hammer= Preferences.Get("hammer", 0);
+            GameBoard.Hammer = Preferences.Get("hammer", 0);
 
             for (int i = 0; i < GameBoard.GridSize; i++)
             {
@@ -115,7 +111,7 @@ namespace MagicLine
                 });
             };
 
-            GameBoard.NextGeneration();
+
             _ = DrawBoard(GameBoard);
 
             BindingContext = this;
@@ -124,112 +120,146 @@ namespace MagicLine
 
         private async Task DrawBoard(Board gameBoard)
         {
-
+            audioPlayer = AudioManager.Current.CreatePlayer(await FileSystem.OpenAppPackageFileAsync("stepf.wav"));
+            audioBoom = AudioManager.Current.CreatePlayer(await FileSystem.OpenAppPackageFileAsync("bomb.wav"));
+            // audioPlayer.Play();
+            await GameBoard.NextGeneration();
+            await GameBoard.NextGeneration();
             mainboard.Children.Clear();
             for (int i = 0; i < gameBoard.GridSize; i++)
             {
                 for (int j = 0; j < gameBoard.GridSize; j++)
                 {
-                    CellView cell = new CellView(gameBoard.Grid[i, j]) { Margin = new Thickness(1) };
+                    Ball cell = GameBoard.GridBoard[i, j];
                     Grid.SetRow(cell, i);
                     Grid.SetColumn(cell, j);
-                    cell.OnClickCell += Cell_OnClickCell;
+                    cell.EventClickCell += Cell_OnSelectedBall;
                     mainboard.Children.Add(cell);
                 }
             }
 
         }
 
+        IAudioPlayer audioPlayer;
+        IAudioPlayer audioBoom;
 
+        //audioPlayer.Play();
+        [Obsolete]
         private void OnBallStep(object obj, bool hasComplete)
         {
-            Device.BeginInvokeOnMainThread(async () =>
+            Device.BeginInvokeOnMainThread(() =>
             {
                 if (!hasComplete)
                 {
-                    var audioPlayer = AudioManager.Current.CreatePlayer(await FileSystem.OpenAppPackageFileAsync("stepf.wav"));
+                    if(audioPlayer.IsPlaying)
+                    {
+                        audioPlayer.Stop();
+                    }
                     audioPlayer.Play();
                 }
                 else
                 {
-                    var audioPlayer = AudioManager.Current.CreatePlayer(await FileSystem.OpenAppPackageFileAsync("bomb.wav"));
-                    audioPlayer.Play();
+                    if(audioBoom.IsPlaying)
+                    {
+                        audioBoom.Stop();
+                    }
+                    audioBoom.Play();
                 }
             });
         }
 
-        private async Task Cell_OnClickCell(CellBall cell)
+        private async Task Cell_OnSelectedBall(object sender, EventArgs e)
         {
-            if (giveused)
+            try
             {
-                var oldData = AbsoluteLayout.GetLayoutBounds(hammer);
-                AbsoluteLayout.SetLayoutBounds(hammer, new Rect(cell.Position.Column, cell.Position.Row, GameBoard.WidthColumn, GameBoard.WidthColumn));
-                await Task.Delay(200);
-                await hammer.RotateTo(20, 250);
-                GameBoard.Grid[cell.RowNumber, cell.ColumnNumber].Size = CellSize.Empty;
-                var audioPlayer = AudioManager.Current.CreatePlayer(await FileSystem.OpenAppPackageFileAsync("bomb.wav"));
-                audioPlayer.Play();
-                GameBoard.Hammer--;
-                await hammer.RotateTo(0, 250);
-                this.AbortAnimation($"Hammer");
-                await Task.Delay(200);
-                AbsoluteLayout.SetLayoutBounds(hammer, oldData);
-                giveused = false;
-                return;
-            }
-
-            if (cell.Size == CellSize.Big)
-            {
-                if (StartMove != null)
+                if (IsBusy) return;
+                var cell = sender as Ball;
+                if (giveused)
                 {
-                    var cellViewx = mainboard.Children.Cast<CellView>().Where(x => x.Cell == StartMove).FirstOrDefault();
-                    cellViewx.Selected();
-                    if (StartMove == cell)
+                    var oldData = AbsoluteLayout.GetLayoutBounds(hammer);
+                    AbsoluteLayout.SetLayoutBounds(hammer, new Rect(cell.Position.Column, cell.Position.Row, GameBoard.WidthColumn, GameBoard.WidthColumn));
+                    await Task.Delay(200);
+                    await hammer.RotateTo(20, 250);
+                    GameBoard.GridBoard[cell.RowNumber, cell.ColumnNumber].Size = BallSize.Empty;
+                    audioBoom.Play();
+                    GameBoard.Hammer--;
+                    await hammer.RotateTo(0, 250);
+                    this.AbortAnimation($"Hammer");
+                    await Task.Delay(200);
+                    AbsoluteLayout.SetLayoutBounds(hammer, oldData);
+                    giveused = false;
+                    return;
+                }
+
+                if (cell.Size == BallSize.Big)
+                {
+                    if (StartMove == null)
                     {
-                        return;
+                        StartMove = cell;
+                        StartMove.IsSelected = true;
+                    }
+                    else
+                    {
+                        if (StartMove == cell)
+                        {
+                            StartMove.IsSelected = false;
+                            StartMove = null;
+                            return;
+                        }
+                        else
+                        {
+                            StartMove.IsSelected = false;
+                            await Task.Delay(100);
+                            StartMove = cell;
+                            StartMove.IsSelected = true;
+                            DestinationMove = null;
+                            return;
+                        }
                     }
                 }
 
-                StartMove = cell;
-                DestinationMove = null;
-                var cellView = mainboard.Children.Cast<CellView>().Where(x => x.Cell == StartMove).FirstOrDefault();
-                cellView.Selected();
-                return;
-            }
-
-            if (StartMove != null)
-            {
-                DestinationMove = cell;
-                var path = this.GameBoard.FindPath(StartMove, DestinationMove);
-                if (path != null && path.Count > 0)
+                if (StartMove != null && cell.Size != BallSize.Big)
                 {
-                    // await this.MoveBall(path);
-                    var cellView = mainboard.Children.Cast<CellView>().Where(x => x.Cell == StartMove).FirstOrDefault();
-                    cellView.Selected();
-                    this.GameBoard.Move(StartMove, path);
-                    StartMove = null;
+                    DestinationMove = cell;
+                    var path = this.GameBoard.FindPath(StartMove, DestinationMove);
+                    if (path != null && path.Count > 0)
+                    {
+                        // await this.MoveBall(path);
+                        var cellView = mainboard.Children.Cast<Ball>().Where(x => x == StartMove).FirstOrDefault();
+                        await this.GameBoard.Move(StartMove, path);
+                        StartMove = null;
+                    }
                     DestinationMove = null;
-
                 }
+            }
+            catch (Exception ex)
+            {
+                IsBusy = false;
+                await Shell.Current.DisplayAlert("Error", ex.Message, "Ok");
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
 
 
-        private async Task MoveBall(List<CellBall> path)
+
+        private async Task MoveBall(List<Ball> path)
         {
-            StartMove.Size = CellSize.Empty;
+            StartMove.Size = BallSize.Empty;
 
             foreach (var item in path)
             {
                 if (item == StartMove)
                 {
-                    item.Size = CellSize.Empty;
+                    item.Size = BallSize.Empty;
                 }
 
                 if (item == DestinationMove)
                 {
                     item.Color = StartMove.Color;
-                    item.Size = CellSize.Big;
+                    item.Size = BallSize.Big;
                 }
 
 
@@ -238,7 +268,7 @@ namespace MagicLine
                     var color = item.Color;
                     var size = item.Size;
                     item.Color = StartMove.Color;
-                    item.Size = CellSize.Big;
+                    item.Size = BallSize.Big;
                     await Task.Delay(100);
                     item.Color = color;
                     item.Size = size;
@@ -251,18 +281,15 @@ namespace MagicLine
 
         private void Button_Clicked(object sender, EventArgs e)
         {
-            var data = JsonSerializer.Serialize(this.GameBoard.Grid.Cast<CellBall>().Where(x => x.Size != CellSize.Empty)
+            var data = JsonSerializer.Serialize(GameBoard.GridBoard.GetGrid(GameBoard.GridSize).Cast<Ball>().Where(x => x.Size != BallSize.Empty)
                 .Select(x => $"{x.RowNumber};{x.ColumnNumber};{x.Size};{x.Color}"),
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
             Preferences.Set("lastBoard", data);
             Preferences.Set("lastScore", GameBoard.Score);
             Preferences.Set("hammer", GameBoard.Hammer);
-
+            Shell.Current.DisplayAlert("Berhasil", "Data Tersimpan !", "Ok");
         }
-        Animation parentAnimation = new Animation();
-
-
 
         private void TapGestureRecognizer_Tapped(object sender, TappedEventArgs e)
         {
@@ -280,6 +307,11 @@ namespace MagicLine
             {
                 this.AbortAnimation("Hammer");
             }
+        }
+
+        private void MyBall_OnSelectedBall(object sender, EventArgs e)
+        {
+
         }
     }
 }

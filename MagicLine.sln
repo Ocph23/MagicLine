@@ -7,8 +7,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MagicLine", "MagicLine\Magi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "gameboard", "..\gameboard.csproj", "{06F65226-16BE-4510-85EB-633BC4DB2F24}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MagicLineLib", "MagicLineLib\MagicLineLib.csproj", "{C447DE68-C4C7-424B-910F-15571DC609D4}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -25,10 +23,6 @@ Global
 		{06F65226-16BE-4510-85EB-633BC4DB2F24}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{06F65226-16BE-4510-85EB-633BC4DB2F24}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{06F65226-16BE-4510-85EB-633BC4DB2F24}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C447DE68-C4C7-424B-910F-15571DC609D4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C447DE68-C4C7-424B-910F-15571DC609D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C447DE68-C4C7-424B-910F-15571DC609D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C447DE68-C4C7-424B-910F-15571DC609D4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
